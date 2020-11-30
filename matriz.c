@@ -41,7 +41,7 @@
 #define NUM_COLUMNAS2 10
 #define NUM_FILAS2 10
 
-void llenar_matriz(float *arreglo, int N, int M);
+void llenar_matriz(float *arreglo, int tam_matriz);
 float multiplica_RenglonColumna(float renglon[], float columna[]);
 void imprime_matriz_resultante(float matriz1[], float matriz2[], float matriz_resultante[]);
 
@@ -83,23 +83,24 @@ int main(int argc, char *argv[])
     //Declarar las matrices solo para el proceso 0
     if (id_proceso == 0)
     {
-        arreglo_original = (float *)malloc(TAM_ARREGLO*sizeof(float));
-        arreglo2_original = (float *)malloc(TAM_ARREGLO*sizeof(float));
+        matriz_original = (float *)malloc(tam_matriz1*sizeof(float));
+        matriz2_original = (float *)malloc(tam_matriz2*sizeof(float));
 
-        llenar_matriz();
-        llenar_matriz(arreglo2_original);
+        llenar_matriz(matriz_original, tam_matriz1);
+        llenar_matriz(matriz2_original, tam_matriz2);
 
         // Inicializa los arreglos revcounts y displs
         for(int i = 0; i < num_procesos; i++){
             counts[i] = num_datos;
             displs[i] = i * num_datos;
         }
+        
         counts[num_procesos-1] = num_datos;
     }
-    //Pasar los datos a los procesos por MPI_Scatterv
 
-    //MPI_Scatterv(arreglo1, counts, displs, MPI_INT, &arreglo11, nDatos, MPI_INT, 0, MPI_COMM_WORLD);
-    //MPI_Scatterv(arreglo2, counts, displs, MPI_INT, &arreglo22, nDatos, MPI_INT, 0, MPI_COMM_WORLD);
+    //Pasar los datos a los procesos por MPI_Scatterv
+    MPI_Scatterv(matriz_original, counts, displs, MPI_FLOAT, &recibir_columna, num_datos, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(matriz2_original, counts, displs, MPI_FLOAT, &recibir_fila, num_datos, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     //Operar las columnas y renglones
 
@@ -109,11 +110,11 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void llenar_matriz(float *arreglo, int N, int M)
+void llenar_matriz(float *arreglo, int tam_matriz)
 {
     float decimal;
 
-    int indice = N * M;
+    int indice = tam_matriz;
 
     //Semilla del random
     time_t t;
